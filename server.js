@@ -71,6 +71,7 @@ import bookingRoutes from "./routes/bookingRoutes.js";
 import adminHotelRoutes from "./routes/adminHotelRoutes.js";
 import adminRoomRoutes from "./routes/adminRoomRoutes.js";
 import adminReportRoutes from "./routes/adminRoutes.js";
+import tripayCallbackRoutes from "./routes/tripayCallbackRoutes.js";
 
 dotenv.config();
 
@@ -80,14 +81,30 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ⬇⬇⬇ CORS di sini
+const allowedOrigins = [
+  "http://localhost:5173",                    // frontend saat development
+  process.env.CLIENT_URL                      // domain Hostinger (diambil dari Heroku Config Vars)
+];
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+      // izinkan request tools seperti Postman (tanpa origin)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
+
+
 app.options("*", cors());
 
 // middleware lain
@@ -102,6 +119,8 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/admin/hotels", adminHotelRoutes);
 app.use("/api/admin/rooms", adminRoomRoutes);
 app.use("/api/admin", adminReportRoutes);
+app.use("/api/tripay", tripayCallbackRoutes);
+
 
 app.get("/", (req, res) => {
   res.send("API hotel booking berjalan");
