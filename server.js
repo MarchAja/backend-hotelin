@@ -27,22 +27,22 @@ const allowedOrigins = [
   process.env.CLIENT_URL        // frontend production (Hostinger)
 ];
 
+// =============== CORS ===============
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // Postman, curl, dll
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error("Not allowed by CORS"));
-    },
+    origin: [
+      "http://localhost:5173",      // untuk development
+      "https://marchaja.dev",       // domain frontend di Hostinger
+    ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
 
+// optional, bantu preflight
 app.options("*", cors());
+
 
 // middleware
 app.use(express.json());
