@@ -29,7 +29,7 @@ router.post('/register', async (req, res) => {
     const token = genToken(user);
     res.json({ token, user });
   } catch (err) {
-    console.error(err);
+    console.error('🚨 REGISTER ERROR:', err.message);
     res.status(500).json({ message: 'Terjadi kesalahan server' });
   }
 });
@@ -56,6 +56,7 @@ router.post('/login', async (req, res) => {
       }
     });
   } catch (err) {
+    console.error('🚨 LOGIN ERROR:', err.message);
     res.status(500).json({ message: 'Terjadi kesalahan server' });
   }
 });
