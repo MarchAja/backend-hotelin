@@ -14,6 +14,7 @@ const genToken = (user) =>
   });
 
 // REGISTER
+// REGISTER
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password, phone, emergency_contact } = req.body;
@@ -29,8 +30,8 @@ router.post('/register', async (req, res) => {
     const token = genToken(user);
     res.json({ token, user });
   } catch (err) {
-    console.error('🚨 REGISTER ERROR:', err.message);
-    res.status(500).json({ message: 'Terjadi kesalahan server' });
+    console.error("🚨 REGISTER ERROR:", err);   // ⬅️ BUKAN err.message
+    res.status(500).json({ message: "Terjadi kesalahan server" });
   }
 });
 
