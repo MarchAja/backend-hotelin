@@ -57,8 +57,8 @@ router.post('/login', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('🚨 LOGIN ERROR:', err.message);
-    res.status(500).json({ message: 'Terjadi kesalahan server' });
+    console.error('🚨 LOGIN ERROR:', err);   // <— HARUS begini, bukan err.message
+    return res.status(500).json({ message: 'Terjadi kesalahan server' });
   }
 });
 
