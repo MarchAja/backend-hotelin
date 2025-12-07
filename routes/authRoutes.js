@@ -1,16 +1,15 @@
-// routes/authRoutes.js
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { pool } from "../config/db.js";
-import { protect, adminOnly } from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 dotenv.config();
 const router = express.Router();
 
 /* ============================================================
-   TOKEN GENERATOR
+   Helper: generate JWT token
 ============================================================ */
 const genToken = (user) =>
   jwt.sign(
@@ -26,18 +25,22 @@ router.post("/register", async (req, res) => {
   try {
     const { name, email, password, phone, emergency_contact } = req.body;
 
+    // cek email / username sudah dipakai atau belum
     const [exists] = await pool.query(
       "SELECT id FROM users WHERE email = ? OR name = ? LIMIT 1",
       [email, name]
     );
-    if (exists.length)
-      return res.status(400).json({ message: "Email atau username sudah terdaftar" });
+    if (exists.length) {
+      return res
+        .status(400)
+        .json({ message: "Email atau username sudah terdaftar" });
+    }
 
     const hashed = await bcrypt.hash(password, 10);
 
     const [result] = await pool.query(
-      `INSERT INTO users (name,email,password,phone,emergency_contact,role)
-       VALUES (?,?,?,?,?,?)`,
+      `INSERT INTO users (name, email, password, phone, emergency_contact, role)
+       VALUES (?, ?, ?, ?, ?, ?)`,
       [name, email, hashed, phone, emergency_contact, "user"]
     );
 
@@ -52,15 +55,18 @@ router.post("/register", async (req, res) => {
 });
 
 /* ============================================================
-   LOGIN (email ATAU username)
+   LOGIN  (bisa email ATAU username)
 ============================================================ */
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    const identifier = email; // bisa email atau username
 
+    // "email" di sini kita pakai sebagai identifier (bisa email atau username)
+    const identifier = email; // contoh: "admin@gmail.com" ATAU "admin"
+
+    // PERHATIKAN: pakai ?, BUKAN string template
     const [rows] = await pool.query(
-      `SELECT * FROM users 
+      `SELECT * FROM users
        WHERE email = ? OR name = ?
        LIMIT 1`,
       [identifier, identifier]
@@ -68,16 +74,18 @@ router.post("/login", async (req, res) => {
 
     const user = rows[0];
 
-    if (!user)
-      return res.status(400).json({
-        message: "Email/username atau password salah",
-      });
+    if (!user) {
+      return res
+        .status(400)
+        .json({ message: "Email/username atau password salah" });
+    }
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match)
-      return res.status(400).json({
-        message: "Email/username atau password salah",
-      });
+    if (!match) {
+      return res
+        .status(400)
+        .json({ message: "Email/username atau password salah" });
+    }
 
     const token = genToken(user);
 
@@ -102,8 +110,9 @@ router.post("/login", async (req, res) => {
 router.get("/me", protect, async (req, res) => {
   try {
     const [rows] = await pool.query(
-      `SELECT id,name,email,phone,emergency_contact,role 
-       FROM users WHERE id = ?`,
+      `SELECT id, name, email, phone, emergency_contact, role
+       FROM users
+       WHERE id = ?`,
       [req.user.id]
     );
 
@@ -122,8 +131,8 @@ router.put("/me", protect, async (req, res) => {
     const { name, phone, emergency_contact } = req.body;
 
     await pool.query(
-      `UPDATE users 
-       SET name = ?, phone = ?, emergency_contact = ? 
+      `UPDATE users
+       SET name = ?, phone = ?, emergency_contact = ?
        WHERE id = ?`,
       [name, phone, emergency_contact, req.user.id]
     );
@@ -135,12 +144,6 @@ router.put("/me", protect, async (req, res) => {
   }
 });
 
-/* ============================================================
-   (OPTIONAL) DELETE / DISABLE THIS ROUTE
-   Kamu bilang ingin menghapus fitur ganti password.
-   Jadi route ini sudah dihapus.
-============================================================ */
-
-// router.put("/change-password", protect, async (req, res) => { ... });
+// Route change-password sengaja dihapus sesuai permintaanmu
 
 export default router;
