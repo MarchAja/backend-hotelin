@@ -45,19 +45,25 @@ router.post('/callback', express.json(), async (req, res) => {
         const payment = payments[0];
 
         // update status payment
-        await pool.query(
-          `UPDATE payments 
-           SET status = ?, paid_at = (CASE WHEN ? = "PAID" THEN NOW() ELSE paid_at END)
-           WHERE id = ?`,
-          [status.toLowerCase(), status, payment.id]
-        );
+const isPaid = status === "PAID";
 
-        // kalau sudah dibayar, update booking juga
-        if (status === 'PAID') {
-          await pool.query('UPDATE bookings SET status = "paid" WHERE id = ?', [
-            payment.booking_id
-          ]);
-        }
+// update payments
+await pool.query(
+  `UPDATE payments
+     SET status = ?,
+         paid_at = CASE WHEN ? THEN NOW() ELSE paid_at END
+   WHERE id = ?`,
+  [isPaid ? "success" : "pending", isPaid, payment.id]
+);
+
+// kalau sudah dibayar, update booking jadi "paid"
+if (isPaid) {
+  await pool.query(
+    "UPDATE bookings SET status = 'paid' WHERE id = ?",
+    [payment.booking_id]
+  );
+}
+
       }
     }
 
