@@ -1,3 +1,4 @@
+// server/routes/authRoutes.js
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -61,16 +62,17 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // "email" di sini kita pakai sebagai identifier (bisa email atau username)
-    const identifier = email; // contoh: "admin@gmail.com" ATAU "admin"
+    // "email" di body boleh berisi email ATAU username
+    const identifier = String(email ?? "").trim();
+    console.log("🔑 LOGIN identifier:", identifier);
 
-    // PERHATIKAN: pakai ?, BUKAN string template
-    const [rows] = await pool.query(
-      `SELECT * FROM users
-       WHERE email = ? OR name = ?
-       LIMIT 1`,
-      [identifier, identifier]
-    );
+    // PENTING: query pakai tanda tanya (parameterized), BUKAN ${}
+    const sql = `
+      SELECT * FROM users
+      WHERE email = ? OR name = ?
+      LIMIT 1
+    `;
+    const [rows] = await pool.query(sql, [identifier, identifier]);
 
     const user = rows[0];
 
@@ -100,7 +102,12 @@ router.post("/login", async (req, res) => {
     });
   } catch (err) {
     console.error("🚨 LOGIN ERROR:", err);
-    res.status(500).json({ message: "Terjadi kesalahan server" });
+    console.error("🔍 DETAIL LOGIN ERROR:", {
+      code: err.code,
+      errno: err.errno,
+      sql: err.sql,
+    });
+    res.status(500).json({ message: "Terjadi kesalahan server saat login" });
   }
 });
 
@@ -143,7 +150,5 @@ router.put("/me", protect, async (req, res) => {
     res.status(500).json({ message: "Gagal memperbarui profil" });
   }
 });
-
-// Route change-password sengaja dihapus sesuai permintaanmu
 
 export default router;
